@@ -2,42 +2,54 @@
 // Name        : TCPSocket.h
 // Author      : Albin Engström
 // Created     : 2014-10-22
-// Modified    : 2014-10-22
+// Modified    : 2014-10-23
 // Description : Definition of class TCPSocket
 // Purpose     : A TCP Socket that is used from a client
 //=============================================================
+#include <unistd.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <stdexcept>
+#include <cstring>
 
-
-class TCPsocket
+class TCPSocket
 {
 private:
-    // Socket descriptor
-    int iSockDesc;
+    //A socket file descriptor
+    int m_socket_file_descriptor;
+
+    //A sockaddr_in struct
+    struct sockaddr_in m_server_address;
 
 public:
 
-    TCPsocket();
+    TCPSocket();
     //Pre:
     //Post: Creates the socket, may throw runtime_error
 
-    ~TCPsocket();
+    ~TCPSocket();
     //Pre:
     //Post: Closes the socket, if not done before
 
-    void connect(const char ipaddress[], in_port_t port);
+    void base_server_connect(in_port_t a_port);
+    //Pre:
+    //Post: Does the base work that the two connect functions share
+
+    void server_connect(const char a_ip_address[], in_port_t a_port);
     //Pre:
     //Post: Connects to server using a dotten decimal adress
     // may throw runtime_error
 
-    void connect(string ipaddress, in_port_t port);
+    void server_connect(std::string host_name, in_port_t a_port);
     //Pre:
     //Post: Connects to server using a hostname, may throw runtime_error
 
-    int getDescriptor() const {return iSockDesc;}
+    int get_descriptor() const {return m_socket_file_descriptor;}
     //Pre:
     //Post: Returns iSockDesc
 
-    void close();
+    void socket_close();
     //Pre:
     //Post: Closes the socet, may throw runtime_error
 
