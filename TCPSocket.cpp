@@ -2,7 +2,7 @@
 // Name        : TCPSocket.cpp
 // Author      : Albin Engström
 // Created     : 2014-10-22
-// Modified    : 2014-10-24
+// Modified    : 2014-10-26
 // Description : Implementation of class TCPSocket
 //=============================================================
 #include "TCPSocket.h"
@@ -33,39 +33,37 @@ void TCPSocket::server_connect(const char a_ip_address[], in_port_t a_port)
     //Sets it's sin_port to a_port
     m_server_address.sin_port = htons(a_port);
 
-/*
-    //Tries to set m_server_adress's sin_addr, throw an exception if it fails
-    if (!(m_server_address.sin_addr.s_addr = inet_addr(a_ip_address)))
-    {
-        throw std::runtime_error(strerror(errno));
-    }
-*/
-
     //Convert address to binary form--------------------------------------------
 
-    struct addrinfo hints; /* in: hints */
+    //An addrinfo struct for getaddrinfo()'s hints argument
+    struct addrinfo hints;
+
+    //An addrinfo struct for getaddrinfo()'s res argument
     struct addrinfo *res; /* out: result */
 
-    memset(&hints, 0, sizeof(addrinfo)); // zero out the struct
+    //Zero out the hints struct
+    memset(&hints, 0, sizeof(addrinfo));
 
-    // Set relevant members
+    //Set relevant members
     hints.ai_family = AF_INET;
     hints.ai_socktype = SOCK_STREAM;
 
+    //Tries to get address info about a_ip_address
     if(getaddrinfo(a_ip_address, NULL, &hints, &res) != 0)
     {
         throw std::runtime_error(strerror(errno));
     }
 
+    //Gets the address and puts it in a sockaddr_in struct
     struct sockaddr_in *saddrp = (sockaddr_in*)(res->ai_addr);
 
-    /* Copy binary address */
-    memcpy(&m_server_address.sin_addr.s_addr, &saddrp->sin_addr.s_addr,4);
+    //Copy binary address
+    memcpy(&m_server_address.sin_addr.s_addr, &saddrp->sin_addr.s_addr, 4);
 
-    freeaddrinfo(res); // release memory allocated by getaddrinfo
+    //Release memory allocated by getaddrinfo
+    freeaddrinfo(res);
 
     //Done----------------------------------------------------------------------
-
 
     //Tries to connect the client to the server, throw an exception if it fails
     if ((connect(m_socket_file_descriptor, (struct sockaddr*)&m_server_address,

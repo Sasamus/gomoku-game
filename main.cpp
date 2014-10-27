@@ -6,7 +6,7 @@
 // Description  : main for project gomoku_game
 // Purpose      : Start the program
 //=============================================================
-#include "TCPSocket.h"
+#include "GomokuClient.h"
 
 #include <iostream>
 
@@ -14,19 +14,12 @@ using namespace std;
 
 int main()
 {
+    //Creates a GomokuClient object
+    GomokuClient gomokuclient;
 
-    try
-    {
-        //Creates a TCPSocket object
-        TCPSocket tcpsocket;
+    //Calls it's Run() method
+    gomokuclient.Run();
 
-        //Connects to server
-        tcpsocket.server_connect("luffarserv.miun.se", 6500);
-    }
-    catch (exception &e)
-    {
-        cout << "Error: " << e.what() << endl;
-    }
 
     return 0;
 }

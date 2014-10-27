@@ -2,7 +2,7 @@
 // Name        : TCPSocket.h
 // Author      : Albin Engström
 // Created     : 2014-10-22
-// Modified    : 2014-10-24
+// Modified    : 2014-10-26
 // Description : Definition of class TCPSocket
 // Purpose     : A TCP Socket that is used from a client
 //=============================================================
