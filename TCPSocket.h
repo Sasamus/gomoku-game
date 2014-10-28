@@ -2,7 +2,7 @@
 // Name        : TCPSocket.h
 // Author      : Albin Engström
 // Created     : 2014-10-22
-// Modified    : 2014-10-26
+// Modified    : 2014-10-27
 // Description : Definition of class TCPSocket
 // Purpose     : A TCP Socket that is used from a client
 //=============================================================
@@ -48,7 +48,7 @@ public:
 
     int get_descriptor() const {return m_socket_file_descriptor;}
     //Pre:
-    //Post: Returns iSockDesc
+    //Post: Returns m_socket_file_descriptor
 
     void socket_close();
     //Pre:
