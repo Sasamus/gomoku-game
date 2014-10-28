@@ -4,7 +4,7 @@ PROGS		= gomoku_game
 LIBS		=
 FILES		= main.cpp TCPSocket.cpp GomokuClient.h
 OBJS		= main.o TCPSocket.o GomokuClient.o
-
+GCH		= GomokuClient.h.gch
 
 all: compile gomoku_game
 
@@ -15,4 +15,4 @@ compile: $(FILES)
 	$(CC) -c $(CCFLAGS) $(FILES)
 
 clean:
-	rm -f $(PROGS) $(OBJS)
+	rm -f $(PROGS) $(OBJS) $(GCH)

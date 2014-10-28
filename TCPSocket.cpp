@@ -2,7 +2,7 @@
 // Name        : TCPSocket.cpp
 // Author      : Albin Engström
 // Created     : 2014-10-22
-// Modified    : 2014-10-26
+// Modified    : 2014-10-28
 // Description : Implementation of class TCPSocket
 //=============================================================
 #include "TCPSocket.h"
@@ -22,7 +22,7 @@ TCPSocket:: ~TCPSocket()
     socket_close();
 }
 
-void TCPSocket::server_connect(const char a_ip_address[], in_port_t a_port)
+void TCPSocket::connect(const char a_ip_address[], in_port_t a_port)
 {
     //Sets m_server_address's sin_family to IPv4
     m_server_address.sin_family = AF_INET;
@@ -66,17 +66,17 @@ void TCPSocket::server_connect(const char a_ip_address[], in_port_t a_port)
     //Done----------------------------------------------------------------------
 
     //Tries to connect the client to the server, throw an exception if it fails
-    if ((connect(m_socket_file_descriptor, (struct sockaddr*)&m_server_address,
+    if ((::connect(m_socket_file_descriptor, (struct sockaddr*)&m_server_address,
             sizeof(m_server_address))) == -1)
     {
         throw std::runtime_error(strerror(errno));
     }
 }
 
-void TCPSocket::server_connect(std::string a_ip_address , in_port_t a_port)
+void TCPSocket::connect(std::string a_ip_address , in_port_t a_port)
 {
-    //Calls server_connect(), coverting a_ip_address to a char array
-    server_connect(a_ip_address.c_str(), a_port);
+    //Calls connect(), coverting a_ip_address to a char array
+    connect(a_ip_address.c_str(), a_port);
 }
 
 void TCPSocket::socket_close()

@@ -2,7 +2,7 @@
 // Name        : GomokuClient.cpp
 // Author      : Albin Engström
 // Created     : 2014-10-26
-// Modified    : 2014-10-27
+// Modified    : 2014-10-28
 // Description : Implementation of class GomokuClient
 //=============================================================
 #include "GomokuClient.h"
@@ -16,7 +16,7 @@ GomokuClient::GomokuClient()
         mp_tcpsocket = new TCPSocket();
 
         //Connects to server
-        mp_tcpsocket->server_connect("luffarserv.miun.se", 6500);
+        mp_tcpsocket->connect("luffarserv.miun.se", 6500);
     }
     catch (std::exception &e)
     {
@@ -33,18 +33,33 @@ GomokuClient::~GomokuClient()
 
 void GomokuClient::Run()
 {
+    //Variables to hold the messages sent and recieved
     char return_message[100];
-    char send_message[] = "CHA:0:0:07:Sasamus\n";
+    std::string send_message;
+
+    //Get input
+    std::cout << "<- ";
+    std::cin >> send_message;
+
+    //Creates a char array for the message
+    char send_message_char[send_message.size() + 1];
+
+    //Copies the message from send_message to send_message_char
+    std::strcpy(send_message_char, send_message.c_str());
+
+    //Adds a newline character to send_message_char
+    send_message_char[sizeof(send_message_char) -2] = '\n';
+
+    //Sends the message to a file descriptor
+    write(mp_tcpsocket->get_descriptor(),
+        send_message_char, sizeof(send_message_char));
 
 
-    int byteswritten =
-        write(mp_tcpsocket->get_descriptor(),
-        send_message, sizeof(send_message));
-    std::cout << "<- " << send_message;
-    
-    int bytesread =
-        read(mp_tcpsocket->get_descriptor(),
-        return_message, sizeof(return_message));
-    std::cout << "-> " << return_message;
+    //Reads the return message from a file descriptor and prints it to screen
+    while(read(mp_tcpsocket->get_descriptor(),
+        return_message, sizeof(return_message)) == 0){}
+        std::cout << "-> " << return_message;
+
+
 
 }

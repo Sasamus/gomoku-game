@@ -2,7 +2,7 @@
 // Name        : TCPSocket.h
 // Author      : Albin Engström
 // Created     : 2014-10-22
-// Modified    : 2014-10-27
+// Modified    : 2014-10-28
 // Description : Definition of class TCPSocket
 // Purpose     : A TCP Socket that is used from a client
 //=============================================================
@@ -37,12 +37,12 @@ public:
     //Pre:
     //Post: Closes the socket, if not done before
 
-    void server_connect(const char a_ip_address[], in_port_t a_port);
+    void connect(const char a_ip_address[], in_port_t a_port);
     //Pre:
     //Post: Connects to server using a dotten decimal adress
     // may throw runtime_error
 
-    void server_connect(std::string host_name, in_port_t a_port);
+    void connect(std::string host_name, in_port_t a_port);
     //Pre:
     //Post: Connects to server using a hostname, may throw runtime_error
 
