@@ -2,7 +2,7 @@
 // Name        : TCPSocket.cpp
 // Author      : Albin Engström
 // Created     : 2014-10-22
-// Modified    : 2014-10-28
+// Modified    : 2014-10-30
 // Description : Implementation of class TCPSocket
 //=============================================================
 #include "TCPSocket.h"
@@ -26,9 +26,6 @@ void TCPSocket::connect(const char a_ip_address[], in_port_t a_port)
 {
     //Sets m_server_address's sin_family to IPv4
     m_server_address.sin_family = AF_INET;
-
-    //If already in network byte order
-    //m_server_address.sin_port = port;
 
     //Sets it's sin_port to a_port
     m_server_address.sin_port = htons(a_port);

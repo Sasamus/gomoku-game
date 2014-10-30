@@ -1,2 +1,1 @@
-Check if htons is needed
 Randomize starting player
