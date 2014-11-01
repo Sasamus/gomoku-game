@@ -1,1 +1,2 @@
 Randomize starting player
+Hang after a second illegal commands
