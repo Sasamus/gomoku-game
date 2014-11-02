@@ -2,7 +2,7 @@
 // Name        : GomokuClient.cpp
 // Author      : Albin Engström
 // Created     : 2014-10-26
-// Modified    : 2014-11-01
+// Modified    : 2014-11-02
 // Description : Implementation of class GomokuClient
 //=============================================================
 #include "GomokuClient.h"
@@ -108,15 +108,44 @@ void GomokuClient::Run()
         }
     }
 
-    //Prints the board with PrintBoard()
-    PrintBoard(player_board, ai_board);
+    //Seeds rand
+    srand(time(NULL));
 
+    //Flips a coin
+    int coin_flip = rand() % 2 + 1;
+
+    //Tells the user the result of the coin flip,
+    // and appeals to their sense of honor
+    std::cout << "Coin flip in progress..." << std::endl;
+    if(coin_flip == 1)
+    {
+        std::cout << "You won, you get to go first." << std::endl;
+    }
+    else
+    {
+        std::cout << "You lost, the AI get to go first." << std::endl;
+        std::cout << "The AI don't know this so you could claim you won."
+                                                                << std::endl;
+        std::cout << "But that wouldn't be too honorable, would it?"
+                                                                << std::endl;
+    }
+
+    //Variable to keep track of skipping user input
+    bool skipp_input = false;
 
     while(1<2)
     {
-        //Get input
-        std::cout << "<- ";
-        std::cin >> send_message;
+        //Checks if skipping user input, if so, skip it
+        if(!skipp_input)
+        {
+            //Gets input
+            std::cout << "<- ";
+            std::cin >> send_message;
+        }
+        else
+        {
+            send_message = "";
+        }
 
         //Creates a char array for the message
         char char_send_message[send_message.size() + 1];
@@ -127,11 +156,74 @@ void GomokuClient::Run()
         //Adds a newline character to char_send_message
         char_send_message[sizeof(char_send_message) -1] = '\n';
 
-        //Sends the message to a file descriptor
-        write(mp_tcpsocket->get_descriptor(),
-            char_send_message, sizeof(char_send_message));
+        //Checks if skipping user input, if so, dont send message
+        if(!skipp_input)
+        {
+            //Sends the message to a file descriptor
+            write(mp_tcpsocket->get_descriptor(),
+                char_send_message, sizeof(char_send_message));
+        }
+        else
+        {
+            skipp_input = false;
+        }
 
-        //Checks if a move was made, if so, print board
+        //Checks if AI is going first
+        if(char_send_message[0] == 'C' && char_send_message[1] == 'H' &&
+            char_send_message[2] == 'A' && char_send_message[6] - '0' == 1)
+        {
+            //Sets skipp_input to true
+            skipp_input = true;
+        }
+
+        //Breaks loop if quiting
+        if(send_message == "QUI")
+        {
+            break;
+        }
+
+
+
+        //Reads the return message from a file descriptor and prints it to screen
+        read(mp_tcpsocket->get_descriptor(),
+                return_message, sizeof(return_message));
+
+
+        //Acts depending on server response message
+        if(return_message[0] == 'I' && return_message[1] == 'L' &&
+                return_message[2] == 'C')
+        {
+            //Print return_message
+            std::cout << "-> " << return_message;
+
+            break;
+        }
+        else if(return_message[0] == 'W' && return_message[1] == 'I' &&
+                return_message[2] == 'N')
+        {
+            //Print return_message
+            std::cout << "-> " << return_message;
+
+            break;
+        }
+        else if(return_message[0] == 'I' && return_message[1] == 'L' &&
+                return_message[2] == 'M')
+        {
+            //Print return_message
+            std::cout << "-> " << return_message;
+
+            break;
+        }
+        else if(return_message[0] == 'N' && return_message[1] == 'A' &&
+                return_message[2] == 'P')
+        {
+            //Print return_message
+            std::cout << "-> " << return_message;
+
+            break;
+        }
+
+        //Checks if a move was made by the user, if so, print board
         if(char_send_message[0] == 'M' && char_send_message[1] == 'O' &&
             char_send_message[2] == 'V' && char_send_message[3] == ':' )
         {
@@ -149,13 +241,18 @@ void GomokuClient::Run()
 
         }
 
-        //Reads the return message from a file descriptor and prints it to screen
-        while(read(mp_tcpsocket->get_descriptor(),
-            return_message, sizeof(return_message)) == 0){}
-
+        //Print return_message
         std::cout << "-> " << return_message;
 
-        //Checks if a move was made, if so, print board
+        //Checks if return_message is OKR
+        if(return_message[0] == 'O' && return_message[1] == 'K' &&
+                return_message[2] == 'R')
+        {
+            //Prints empty board
+            PrintBoard(player_board, ai_board);
+        }
+
+        //Checks if a move was made by the AI, if so, print board
         if(return_message[0] == 'M' && return_message[1] == 'O' &&
             return_message[2] == 'V' && return_message[3] == ':' )
         {
@@ -175,11 +272,6 @@ void GomokuClient::Run()
 
 
 
-        //Break loop if quiting
-        if(send_message == "QUI")
-        {
-            break;
-        }
 
     }
 
