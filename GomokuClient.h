@@ -23,7 +23,6 @@ private:
 
 
 public:
-
     GomokuClient();
     //Pre:
     //Post: Establishes a connection to the server
