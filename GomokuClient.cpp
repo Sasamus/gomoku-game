@@ -2,7 +2,7 @@
 // Name        : GomokuClient.cpp
 // Author      : Albin Engström
 // Created     : 2014-10-26
-// Modified    : 2014-11-02
+// Modified    : 2014-11-05
 // Description : Implementation of class GomokuClient
 //=============================================================
 #include "GomokuClient.h"
@@ -130,22 +130,11 @@ void GomokuClient::Run()
                                                                 << std::endl;
     }
 
-    //Variable to keep track of skipping user input
-    bool skipp_input = false;
-
     while(1<2)
     {
-        //Checks if skipping user input, if so, skip it
-        if(!skipp_input)
-        {
-            //Gets input
-            std::cout << "<- ";
-            std::cin >> send_message;
-        }
-        else
-        {
-            send_message = "";
-        }
+        //Gets input
+        std::cout << "<- ";
+        std::cin >> send_message;
 
         //Creates a char array for the message
         char char_send_message[send_message.size() + 1];
@@ -156,25 +145,11 @@ void GomokuClient::Run()
         //Adds a newline character to char_send_message
         char_send_message[sizeof(char_send_message) -1] = '\n';
 
-        //Checks if skipping user input, if so, dont send message
-        if(!skipp_input)
-        {
-            //Sends the message to a file descriptor
-            write(mp_tcpsocket->get_descriptor(),
-                char_send_message, sizeof(char_send_message));
-        }
-        else
-        {
-            skipp_input = false;
-        }
 
-        //Checks if AI is going first
-        if(char_send_message[0] == 'C' && char_send_message[1] == 'H' &&
-            char_send_message[2] == 'A' && char_send_message[6] - '0' == 1)
-        {
-            //Sets skipp_input to true
-            skipp_input = true;
-        }
+        //Sends the message to a file descriptor
+        write(mp_tcpsocket->get_descriptor(),
+            char_send_message, sizeof(char_send_message));
+
 
         //Breaks loop if quiting
         if(send_message == "QUI")
@@ -182,9 +157,7 @@ void GomokuClient::Run()
             break;
         }
 
-
-
-        //Reads the return message from a file descriptor and prints it to screen
+        //Reads the return message from a file descriptor
         read(mp_tcpsocket->get_descriptor(),
                 return_message, sizeof(return_message));
 
@@ -269,6 +242,43 @@ void GomokuClient::Run()
             PrintBoard(player_board, ai_board);
 
         }
+
+        //Check for a second return message
+        int bytes_read = read(mp_tcpsocket->get_descriptor(),
+                return_message, sizeof(return_message));
+
+        if(bytes_read != 0 && bytes_read != -1)
+        {
+            //Checks if a move was made by the AI, if so, print board
+            if(return_message[0] == 'M' && return_message[1] == 'O' &&
+                return_message[2] == 'V' && return_message[3] == ':' )
+            {
+                //Variables to hold the move coordinates
+                int x, y;
+
+                //Gets the coordiniates
+                getMove(return_message, x, y);
+
+                //Adds the move to ai_board
+                ai_board[x][y] = true;
+
+                //Prints the board with PrintBoard()
+                PrintBoard(player_board, ai_board);
+
+            }
+            //Check if AI Won, if so, end the game
+            else if(return_message[0] == 'W' && return_message[1] == 'I' &&
+                return_message[2] == 'N' )
+            {
+                //Print return_message
+                std::cout << "-> " << return_message;
+
+                break;
+            }
+        }
+
+
+
 
 
 

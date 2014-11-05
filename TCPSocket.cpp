@@ -2,7 +2,7 @@
 // Name        : TCPSocket.cpp
 // Author      : Albin Engström
 // Created     : 2014-10-22
-// Modified    : 2014-10-30
+// Modified    : 2014-11-05
 // Description : Implementation of class TCPSocket
 //=============================================================
 #include "TCPSocket.h"
@@ -14,6 +14,13 @@ TCPSocket::TCPSocket()
     {
         throw std::runtime_error(strerror(errno));
     }
+
+    //Set recieve timeout for m_socket_file_descriptor
+    struct timeval timeout;
+    timeout.tv_sec = 1;
+    timeout.tv_usec = 0;
+    setsockopt (m_socket_file_descriptor, SOL_SOCKET, SO_RCVTIMEO,
+    (char *)&timeout, sizeof(timeout));
 }
 
 TCPSocket:: ~TCPSocket()
