@@ -16,7 +16,7 @@ GomokuClient::GomokuClient()
         mp_tcpsocket = new TCPSocket();
 
         //Connects to server
-        mp_tcpsocket->connect("luffarserv.miun.se", 6500);
+        mp_tcpsocket->connect("luffarserv.miun.se", 6501);
     }
     catch (std::exception &e)
     {
