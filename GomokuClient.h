@@ -21,6 +21,9 @@ private:
     //A TCPSocket pointer
     TCPSocket *mp_tcpsocket;
 
+    //Creates 2 dimensinal vectors to represent the players moves
+    std::vector< std::vector<bool> > player_board;
+    std::vector< std::vector<bool> > ai_board;
 
 public:
     GomokuClient();
@@ -43,6 +46,10 @@ public:
     void getMove(char *message, int &x, int &y);
     //Pre:
     //Post: Sets x and y according to the message
+
+    void ListenToServer();
+    //Pre:
+    //Post: Reacts to messages from the server
 
 
 };

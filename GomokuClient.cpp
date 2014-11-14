@@ -22,6 +22,10 @@ GomokuClient::GomokuClient()
     {
         std::cout << "Error: " << e.what() << std::endl;
     }
+
+    //Creates 2 dimensinal vectors to represent the players moves
+    player_board = std::vector< std::vector<bool> > (15, std::vector<bool>(15));
+    ai_board = std::vector< std::vector<bool> > (15, std::vector<bool>(15));
 }
 
 
@@ -90,13 +94,12 @@ void GomokuClient::getMove(char *a_message, int &x, int &y)
 
 void GomokuClient::Run()
 {
-    //Variables to hold the messages sent and recieved
-    char return_message[100];
+    //Variables to hold message to send
     std::string send_message;
 
     //Creates 2 dimensinal vectors to represent the players moves
-    std::vector< std::vector<bool> > player_board(15, std::vector<bool>(15));
-    std::vector< std::vector<bool> > ai_board(15, std::vector<bool>(15));
+    //std::vector< std::vector<bool> > player_board (15, std::vector<bool>(15));
+    //std::vector< std::vector<bool> > ai_board(15, std::vector<bool>(15));
 
     //Sets all the locations on the boards to false
     for(unsigned int i=0; i < 15; i++)
@@ -130,10 +133,12 @@ void GomokuClient::Run()
                                                                 << std::endl;
     }
 
+    //Inform the user of the move command
+    std::cout << "The command for moves are '00,00' "
+        "representing the tile numbers on the board" << std::endl;
+
     while(1<2)
     {
-        //Move command: "00,00" representing the tile names on the board
-
         //Gets input
         std::cout << "<- ";
         std::cin >> send_message;
@@ -187,45 +192,6 @@ void GomokuClient::Run()
             break;
         }
 
-        //Reads the return message from a file descriptor
-        read(mp_tcpsocket->get_descriptor(),
-                return_message, sizeof(return_message));
-
-
-        //Acts depending on server response message
-        if(return_message[0] == 'I' && return_message[1] == 'L' &&
-                return_message[2] == 'C')
-        {
-            //Print return_message
-            std::cout << "-> " << return_message;
-
-            break;
-        }
-        else if(return_message[0] == 'W' && return_message[1] == 'I' &&
-                return_message[2] == 'N')
-        {
-            //Print return_message
-            std::cout << "-> " << return_message;
-
-            break;
-        }
-        else if(return_message[0] == 'I' && return_message[1] == 'L' &&
-                return_message[2] == 'M')
-        {
-            //Print return_message
-            std::cout << "-> " << return_message;
-
-            break;
-        }
-        else if(return_message[0] == 'N' && return_message[1] == 'A' &&
-                return_message[2] == 'P')
-        {
-            //Print return_message
-            std::cout << "-> " << return_message;
-
-            break;
-        }
-
         //Checks if a move was made by the user, if so, print board
         if(move_message[0] == 'M' && move_message[1] == 'O' &&
             move_message[2] == 'V' && move_message[3] == ':' )
@@ -243,42 +209,68 @@ void GomokuClient::Run()
             PrintBoard(player_board, ai_board);
 
         }
+    }
+}
 
-        //Print return_message
-        std::cout << "-> " << return_message;
+void GomokuClient::ListenToServer()
+{
+    //Variable to hold the message
+    char return_message[100];
 
-        //Checks if return_message is OKR
-        if(return_message[0] == 'O' && return_message[1] == 'K' &&
-                return_message[2] == 'R')
-        {
-            //Prints empty board
-            PrintBoard(player_board, ai_board);
-        }
-
-        //Checks if a move was made by the AI, if so, print board
-        if(return_message[0] == 'M' && return_message[1] == 'O' &&
-            return_message[2] == 'V' && return_message[3] == ':' )
-        {
-            //Variables to hold the move coordinates
-            int x, y;
-
-            //Gets the coordiniates
-            getMove(return_message, x, y);
-
-            //Adds the move to ai_board
-            ai_board[x][y] = true;
-
-            //Prints the board with PrintBoard()
-            PrintBoard(player_board, ai_board);
-
-        }
-
-        //Check for a second return message
+    while(1 < 2)
+    {
+        //Attempts to read a message from a file descriptor
         int bytes_read = read(mp_tcpsocket->get_descriptor(),
                 return_message, sizeof(return_message));
 
+        //If something was read
         if(bytes_read != 0 && bytes_read != -1)
         {
+            //Acts depending on server response message
+            if(return_message[0] == 'I' && return_message[1] == 'L' &&
+                    return_message[2] == 'C')
+            {
+                //Print return_message
+                std::cout << "-> " << return_message;
+
+                break;
+            }
+            else if(return_message[0] == 'W' && return_message[1] == 'I' &&
+                    return_message[2] == 'N')
+            {
+                //Print return_message
+                std::cout << "-> " << return_message;
+
+                break;
+            }
+            else if(return_message[0] == 'I' && return_message[1] == 'L' &&
+                    return_message[2] == 'M')
+            {
+                //Print return_message
+                std::cout << "-> " << return_message;
+
+                break;
+            }
+            else if(return_message[0] == 'N' && return_message[1] == 'A' &&
+                    return_message[2] == 'P')
+            {
+                //Print return_message
+                std::cout << "-> " << return_message;
+
+                break;
+            }
+
+            //Print return_message
+            std::cout << "-> " << return_message;
+
+            //Checks if return_message is OKR
+            if(return_message[0] == 'O' && return_message[1] == 'K' &&
+                    return_message[2] == 'R')
+            {
+                //Prints empty board
+                PrintBoard(player_board, ai_board);
+            }
+
             //Checks if a move was made by the AI, if so, print board
             if(return_message[0] == 'M' && return_message[1] == 'O' &&
                 return_message[2] == 'V' && return_message[3] == ':' )
@@ -296,8 +288,9 @@ void GomokuClient::Run()
                 PrintBoard(player_board, ai_board);
 
             }
+
             //Check if AI Won, if so, end the game
-            else if(return_message[0] == 'W' && return_message[1] == 'I' &&
+            if(return_message[0] == 'W' && return_message[1] == 'I' &&
                 return_message[2] == 'N' )
             {
                 //Print return_message
@@ -306,15 +299,5 @@ void GomokuClient::Run()
                 break;
             }
         }
-
-
-
-
-
-
-
     }
-
-
-
 }
