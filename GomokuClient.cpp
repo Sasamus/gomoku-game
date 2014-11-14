@@ -2,7 +2,7 @@
 // Name        : GomokuClient.cpp
 // Author      : Albin Engström
 // Created     : 2014-10-26
-// Modified    : 2014-11-05
+// Modified    : 2014-11-14
 // Description : Implementation of class GomokuClient
 //=============================================================
 #include "GomokuClient.h"
@@ -132,24 +132,54 @@ void GomokuClient::Run()
 
     while(1<2)
     {
+        //Move command: "00,00" representing the tile names on the board
+
         //Gets input
         std::cout << "<- ";
         std::cin >> send_message;
 
-        //Creates a char array for the message
+        //Creates a char arrays for the messages
         char char_send_message[send_message.size() + 1];
+        char move_message[10];
 
         //Copies the message from send_message to char_send_message
         std::strcpy(char_send_message, send_message.c_str());
 
-        //Adds a newline character to char_send_message
-        char_send_message[sizeof(char_send_message) -1] = '\n';
+        //Check if send_message is an move command
+        if(send_message.size() == 5 && char_send_message[2] == ',')
+        {
+            //Make char_send_message into a valid move command------------------
 
+            //Create a string for it
+            std::string tmp_message = "MOV:";
 
-        //Sends the message to a file descriptor
-        write(mp_tcpsocket->get_descriptor(),
-            char_send_message, sizeof(char_send_message));
+            //Create a valid char_send_message
+            tmp_message
+            = tmp_message + char_send_message[0] + char_send_message[1] + ":"
+            + char_send_message[3] +  char_send_message[4];
 
+            //Copies tmp_message to char_send_message
+            std::strcpy(move_message, tmp_message.c_str());
+
+            //Adds a newline character to char_send_message
+            move_message[sizeof(move_message) -1] = '\n';
+
+            //Sends the message to a file descriptor
+            write(mp_tcpsocket->get_descriptor(),
+                move_message, sizeof(move_message));
+
+            //Make char_send_message into a valid move command------------------
+
+        }
+        else
+        {
+            //Adds a newline character to char_send_message
+            char_send_message[sizeof(char_send_message) -1] = '\n';
+
+            //Sends the message to a file descriptor
+            write(mp_tcpsocket->get_descriptor(),
+                char_send_message, sizeof(char_send_message));
+        }
 
         //Breaks loop if quiting
         if(send_message == "QUI")
@@ -197,14 +227,14 @@ void GomokuClient::Run()
         }
 
         //Checks if a move was made by the user, if so, print board
-        if(char_send_message[0] == 'M' && char_send_message[1] == 'O' &&
-            char_send_message[2] == 'V' && char_send_message[3] == ':' )
+        if(move_message[0] == 'M' && move_message[1] == 'O' &&
+            move_message[2] == 'V' && move_message[3] == ':' )
         {
             //Variables to hold the move coordinates
             int x, y;
 
             //Gets the coordiniates
-            getMove(char_send_message, x, y);
+            getMove(move_message, x, y);
 
             //Adds the move to player_board
             player_board[x][y] = true;
