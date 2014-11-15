@@ -1,7 +1,7 @@
 CC 			= g++
 CCFLAGS		= -std=c++0x -Wall -Wextra
 PROGS		= gomoku_game
-LIBS		=
+LIBS		= -pthread
 FILES		= main.cpp TCPSocket.cpp GomokuClient.cpp
 OBJS		= main.o TCPSocket.o GomokuClient.o
 GCH			= GomokuClient.h.gch

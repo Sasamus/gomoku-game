@@ -13,6 +13,9 @@
 #include <vector>
 #include <stdlib.h>
 #include <time.h>
+#include <thread>
+#include <mutex>
+#include <exception>
 
 
 class GomokuClient
@@ -25,7 +28,11 @@ private:
     std::vector< std::vector<bool> > player_board;
     std::vector< std::vector<bool> > ai_board;
 
+    //Used to make sure cout usage is atomic
+    std::mutex cout_mutex;
+
 public:
+
     GomokuClient();
     //Pre:
     //Post: Establishes a connection to the server
@@ -51,5 +58,12 @@ public:
     //Pre:
     //Post: Reacts to messages from the server
 
-
+    //A Wrapper allowing ListenToServer() to be called by a thread
+    /*
+    static void StaticWrapper_ListenToServer(void *o)
+    {
+        GomokuClient *gomokuclient = static_cast<GomokuClient*>(o);
+        gomokuclient->ListenToServer();
+    }
+    */
 };

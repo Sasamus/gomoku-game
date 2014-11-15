@@ -94,12 +94,11 @@ void GomokuClient::getMove(char *a_message, int &x, int &y)
 
 void GomokuClient::Run()
 {
+    //Start ListenToServer() in another thread
+    std::thread listenThread ([&] { this->ListenToServer(); });
+
     //Variables to hold message to send
     std::string send_message;
-
-    //Creates 2 dimensinal vectors to represent the players moves
-    //std::vector< std::vector<bool> > player_board (15, std::vector<bool>(15));
-    //std::vector< std::vector<bool> > ai_board(15, std::vector<bool>(15));
 
     //Sets all the locations on the boards to false
     for(unsigned int i=0; i < 15; i++)
@@ -117,6 +116,10 @@ void GomokuClient::Run()
     //Flips a coin
     int coin_flip = rand() % 2 + 1;
 
+    //Inform the user of the move command
+    std::cout << "The command for moves are '00,00' "
+        "representing the tile numbers on the board" << std::endl;
+
     //Tells the user the result of the coin flip,
     // and appeals to their sense of honor
     std::cout << "Coin flip in progress..." << std::endl;
@@ -132,15 +135,13 @@ void GomokuClient::Run()
         std::cout << "But that wouldn't be too honorable, would it?"
                                                                 << std::endl;
     }
+    
+    //Shows the imput prompt
+    std::cout << "<- ";
 
-    //Inform the user of the move command
-    std::cout << "The command for moves are '00,00' "
-        "representing the tile numbers on the board" << std::endl;
-
-    while(1<2)
+    while(1 < 2)
     {
         //Gets input
-        std::cout << "<- ";
         std::cin >> send_message;
 
         //Creates a char arrays for the messages
@@ -208,8 +209,24 @@ void GomokuClient::Run()
             //Prints the board with PrintBoard()
             PrintBoard(player_board, ai_board);
 
+            //Shows the imput prompt
+            std::cout << "<- ";
+
         }
     }
+
+    try
+    {
+    	// Get the native thread handle!
+    	std::thread::native_handle_type threadHandle = listenThread.native_handle();
+    	// Call the underlying function
+    	pthread_cancel(threadHandle);
+
+    	listenThread.join();  // Wait cfor the thread to finish
+	}
+	catch(std::exception &e){
+		std::cout << e.what() << std::endl;
+	}
 }
 
 void GomokuClient::ListenToServer()
@@ -219,6 +236,7 @@ void GomokuClient::ListenToServer()
 
     while(1 < 2)
     {
+
         //Attempts to read a message from a file descriptor
         int bytes_read = read(mp_tcpsocket->get_descriptor(),
                 return_message, sizeof(return_message));
@@ -260,15 +278,18 @@ void GomokuClient::ListenToServer()
                 break;
             }
 
-            //Print return_message
-            std::cout << "-> " << return_message;
+
 
             //Checks if return_message is OKR
             if(return_message[0] == 'O' && return_message[1] == 'K' &&
                     return_message[2] == 'R')
             {
+                //Print return_message
+                std::cout << "-> " << return_message;
+
                 //Prints empty board
                 PrintBoard(player_board, ai_board);
+                std::cout << "<- ";
             }
 
             //Checks if a move was made by the AI, if so, print board
@@ -283,6 +304,9 @@ void GomokuClient::ListenToServer()
 
                 //Adds the move to ai_board
                 ai_board[x][y] = true;
+
+                //Print return_message
+                std::cout << "-> " << return_message;
 
                 //Prints the board with PrintBoard()
                 PrintBoard(player_board, ai_board);
