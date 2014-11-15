@@ -2,7 +2,7 @@
 // Name        : GomokuClient.h
 // Author      : Albin Engström
 // Created     : 2014-10-26
-// Modified    : 2014-11-14
+// Modified    : 2014-11-15
 // Description : Definition of class GomokuClient
 // Purpose     : A TCP Socket that is used from a client
 //=============================================================
