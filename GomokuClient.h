@@ -16,6 +16,7 @@
 #include <thread>
 #include <mutex>
 #include <exception>
+#include <string>
 
 
 class GomokuClient
@@ -30,9 +31,6 @@ private:
 
     //Used to make sure cout usage is atomic
     std::mutex m_cout_mutex;
-
-    //Variable to keep track of if program shoudl quit
-    bool m_quit = false;
 
 public:
 

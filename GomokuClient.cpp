@@ -94,8 +94,11 @@ void GomokuClient::getMove(char *a_message, int &x, int &y)
 
 void GomokuClient::Run()
 {
-    //Start ListenToServer() in another thread
+    //Start ListenToServer() in another thread_from_server
     std::thread listenThread ([&] { this->ListenToServer(); });
+
+    //Variable to keep track of if a game is running
+    bool game_running = false;
 
     //Variables to hold message to send
     std::string send_message;
@@ -117,34 +120,55 @@ void GomokuClient::Run()
     int coin_flip = rand() % 2 + 1;
 
     //Inform the user of the move command
+    std::cout << "----------------------------------"
+        "-------------------------------------------------" << std::endl;
     std::cout << "The command for moves are '00,00' "
         "representing the tile numbers on the board" << std::endl;
     std::cout << "----------------------------------"
         "-------------------------------------------------" << std::endl;
 
-    //Tells the user the result of the coin flip,
-    // and appeals to their sense of honor
-    std::cout << "Coin flip in progress..." << std::endl;
-    if(coin_flip == 1)
+    //Strings for input
+    std::string opponent;
+    std::string name;
+    std::string start_game;
+    std::string name_length;
+
+    //Ask what opponent the user wants
+    std::cout << "Do you want to play against Striker[0] or Defender[1]?"
+        << std::endl;
+    std::cin >> opponent;
+
+    //Ask for the user's name
+    std::cout << "What is your name?" << std::endl;
+    std::cin >> name;
+
+    //Create a string for the name lenght part of the command
+    if(name.length() < 10)
     {
-        std::cout << "You won, you get to go first." << std::endl;
+        name_length = "0" + std::to_string(name.length());
     }
     else
     {
-        std::cout << "You lost, the AI get to go first." << std::endl;
-        std::cout << "The AI don't know this so you could claim you won."
-                                                                << std::endl;
-        std::cout << "But that wouldn't be too honorable, would it?"
-                                                                << std::endl;
+        name_length = std::to_string(name.length());
     }
 
-    //Print imput prompt
-    std::cout << "<- ";
+    //Create a CHA message
+    start_game = "CHA:" + opponent + ":" + std::to_string(coin_flip) + ":"
+        + name_length + ":" + name + "\n";
 
+    bool first_run = true;
     while(1 < 2)
     {
-        //Gets input
-        std::cin >> send_message;
+        if(first_run)
+        {
+            send_message = start_game;
+            first_run = false;
+        }
+        else
+        {
+            //Gets input
+            std::cin >> send_message;
+        }
 
         std::lock_guard<std::mutex> lock_guard (m_cout_mutex);
 
@@ -168,10 +192,10 @@ void GomokuClient::Run()
             = tmp_message + char_send_message[0] + char_send_message[1] + ":"
             + char_send_message[3] +  char_send_message[4];
 
-            //Copies tmp_message to char_send_message
+            //Copies tmp_message to move_message
             std::strcpy(move_message, tmp_message.c_str());
 
-            //Adds a newline character to char_send_message
+            //Adds a newline character to move_message
             move_message[sizeof(move_message) -1] = '\n';
 
             //Sends the message to a file descriptor
@@ -181,21 +205,80 @@ void GomokuClient::Run()
             //Make char_send_message into a valid move command------------------
 
         }
-        else
-        {
-            //Adds a newline character to char_send_message
-            char_send_message[sizeof(char_send_message) -1] = '\n';
-
-            //Sends the message to a file descriptor
-            write(mp_tcpsocket->get_descriptor(),
-                char_send_message, sizeof(char_send_message));
-        }
-
         //breaks loop if quiting
-        if(send_message == "QUI")
+        else if(send_message == "QUI")
         {
             std::exit(0);
         }
+        //send_messagage isn't a MOV or QUI, send as CHT if game is runnig
+        // send as is otherwise
+        else
+        {
+            if(game_running)
+            {
+                //Make char_send_message into a valid CHT command---------------
+
+                //Create a string for it
+                std::string tmp_message = "CHT:";
+
+                //A string to hold the size part of the command
+                std::string message_size;
+
+                //Create a string for the size part of the command
+                if(sizeof(char_send_message) <= 9)
+                {
+                    message_size
+                    = "0" + std::to_string(sizeof(char_send_message) - 1);
+                }
+                else if(sizeof(char_send_message) > 9)
+                {
+                    message_size
+                    = std::to_string(sizeof(char_send_message) - 1);
+                }
+                else
+                {
+                    std::cout
+                    << "To big message to be sent as chat" << std::endl;
+                }
+
+                //Create a valid message
+                tmp_message
+                = tmp_message + message_size + ":" + char_send_message;
+
+                //Create a char array fpr the message
+                char chat_message[tmp_message.size()];
+
+                //Copies tmp_message to chat_message
+                std::strcpy(chat_message, tmp_message.c_str());
+
+                //Adds a newline character to chat_message
+                chat_message[sizeof(chat_message) -1 ] = '\n';
+
+                //Sends the message to a file descriptor
+                write(mp_tcpsocket->get_descriptor(),
+                    chat_message, sizeof(chat_message));
+
+                //Make char_send_message into a valid CHT command---------------
+            }
+            else
+            {
+                //Copies tmp_message to char_send_message
+                std::strcpy(char_send_message, send_message.c_str());
+
+                //Adds a newline character to char_send_message
+                char_send_message[sizeof(char_send_message) -1] = '\n';
+
+                //Sends the message to a file descriptor
+                write(mp_tcpsocket->get_descriptor(),
+                    char_send_message, sizeof(char_send_message));
+
+                //Set game_running to true
+                game_running = true;
+
+            }
+
+        }
+
 
         //Checks if a move was made by the user, if so, print board
         if(move_message[0] == 'M' && move_message[1] == 'O' &&
@@ -213,19 +296,20 @@ void GomokuClient::Run()
             //Prints the board with PrintBoard()
             PrintBoard(m_player_board, m_ai_board);
         }
+
         m_cout_mutex.unlock();
     }
 
     try
     {
-    	//Get the native thread handle
+    	//Get the native thread_from_server handle
     	std::thread::native_handle_type threadHandle
             = listenThread.native_handle();
 
     	// Call the native cancel with the handle
     	pthread_cancel(threadHandle);
 
-        //Wait for the thread to finish
+        //Wait for the thread_from_server to finish
     	listenThread.join();
 	}
 	catch(std::exception &e){
@@ -235,120 +319,112 @@ void GomokuClient::Run()
 
 void GomokuClient::ListenToServer()
 {
-    //Variable to hold the message
-    char return_message[100];
+    //Variables to hold the message
+    char read_from_server[200];
+    char message[200];
 
     while(1 < 2)
     {
-        //Attempts to read a message from a file descriptor
+        //Attempts to read_from_server a message from a file descriptor
         int bytes_read = read(mp_tcpsocket->get_descriptor(),
-                return_message, sizeof(return_message));
+                read_from_server, sizeof(read_from_server));
 
-        //If something was read
+        //If something was read_from_server
         if(bytes_read != 0 && bytes_read != -1)
         {
             std::lock_guard<std::mutex> lock_guard (m_cout_mutex);
 
-            //Acts depending on server response message
-            if(return_message[0] == 'I' && return_message[1] == 'L' &&
-                    return_message[2] == 'C')
+            //read_from_server a message
+            int count_chars = 0;
+            for(char c : read_from_server)
             {
-                //Mark where the message ends
-                return_message[4] = '\0';
+                if(c != '\n')
+                {
+                    message[count_chars] = c;
+                    count_chars++;
+                }
+                else
+                {
+                    message[count_chars] = c;
+                    message[count_chars + 1] = '\0';
+                    count_chars++;
 
-                //Print return_message
-                std::cout << "-> " << return_message;
+                    //Acts depending on server response message
+                    if(message[0] == 'I' && message[1] == 'L'
+                        && message[2] == 'C')
+                    {
+                        //Print message
+                        std::cout << "Server: " << message;
 
-                std::exit(1);
+                        std::exit(1);
+                    }
+                    else if(message[0] == 'W' && message[1] == 'I'
+                        && message[2] == 'N')
+                    {
+                        //Print message
+                        std::cout << "Server: " << message;
+
+                        std::exit(0);
+                    }
+                    else if(message[0] == 'I' && message[1] == 'L'
+                        && message[2] == 'M')
+                    {
+                        //Print message
+                        std::cout << "Server: " << message;
+
+                        std::exit(1);
+                    }
+                    else if(message[0] == 'N' && message[1] == 'A'
+                        && message[2] == 'P')
+                    {
+                        //Print message
+                        std::cout << "Server: " << message;
+
+                        std::exit(1);
+                    }
+                    //Checks if message is CHT
+                    else if(message[0] == 'C' && message[1] == 'H'
+                        && message[2] == 'T')
+                    {
+                        //Print message
+                        std::cout << "Server: " << message;
+                        std::cout.flush();
+                    }
+                    //Checks if message is OKR
+                    else if(message[0] == 'O' && message[1] == 'K'
+                        && message[2] == 'R')
+                    {
+                        //Print message
+                        std::cout << "Server: " << message;
+
+                        //Prints empty board
+                        PrintBoard(m_player_board, m_ai_board);
+                    }
+                    //Checks if a move was made by the AI, if so, print board
+                    else if(message[0] == 'M' && message[1] == 'O'
+                        && message[2] == 'V' && message[3] == ':')
+                    {
+                        //Variables to hold the move coordinates
+                        int x, y;
+
+                        //Gets the coordiniates
+                        getMove(message, x, y);
+
+                        //Adds the move to m_ai_board
+                        m_ai_board[x][y] = true;
+
+                        //Print message
+                        std::cout << "Server: " << message;
+
+                        //Prints the board with PrintBoard()
+                        PrintBoard(m_player_board, m_ai_board);
+                    }
+                    //Reset message and count_chars
+                    memset(message, '\0', count_chars);
+                    count_chars = 0;
+                }
             }
-            else if(return_message[0] == 'W' && return_message[1] == 'I' &&
-                    return_message[2] == 'N')
-            {
-                //Mark where the message ends
-                return_message[4] = '\0';
-
-                //Print return_message
-                std::cout << "-> " << return_message;
-
-                std::exit(0);
-            }
-            else if(return_message[0] == 'I' && return_message[1] == 'L' &&
-                    return_message[2] == 'M')
-            {
-                //Mark where the message ends
-                return_message[10] = '\0';
-
-                //Print return_message
-                std::cout << "-> " << return_message;
-
-                std::exit(1);
-            }
-            else if(return_message[0] == 'N' && return_message[1] == 'A' &&
-                    return_message[2] == 'P')
-            {
-                //Mark where the message ends
-                return_message[4] = '\0';
-
-                //Print return_message
-                std::cout << "-> " << return_message;
-
-                std::exit(1);
-            }
-            //Checks if return_message is CHT
-            else if(return_message[0] == 'C' && return_message[1] == 'H' &&
-                    return_message[2] == 'T')
-            {
-                //Print return_message
-                std::cout << std::endl;
-                std::cout << "-> " << return_message;
-
-                //Print imput prompt
-                std::cout << "<- ";
-                std::cout.flush();
-            }
-            //Checks if return_message is OKR
-            else if(return_message[0] == 'O' && return_message[1] == 'K' &&
-                    return_message[2] == 'R')
-            {
-                //Print return_message
-                std::cout << "-> " << return_message;
-
-                //Prints empty board
-                PrintBoard(m_player_board, m_ai_board);
-
-                //Print imput prompt
-                std::cout << "<- ";
-            }
-            //Checks if a move was made by the AI, if so, print board
-            else if(return_message[0] == 'M' && return_message[1] == 'O' &&
-                return_message[2] == 'V' && return_message[3] == ':' )
-            {
-                //Variables to hold the move coordinates
-                int x, y;
-
-                //Gets the coordiniates
-                getMove(return_message, x, y);
-
-                //Adds the move to m_ai_board
-                m_ai_board[x][y] = true;
-
-                //Mark where the message ends
-                return_message[10] = '\0';
-
-                //Print return_message
-                std::cout << "-> " << return_message;
-
-                //Prints the board with PrintBoard()
-                PrintBoard(m_player_board, m_ai_board);
-
-                //Print imput prompt
-                std::cout << "<- ";
-                std::cout.flush();
-
-            }
-
             m_cout_mutex.unlock();
         }
     }
-    m_quit = true;
 }
