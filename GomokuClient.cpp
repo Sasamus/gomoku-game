@@ -24,8 +24,9 @@ GomokuClient::GomokuClient()
     }
 
     //Creates 2 dimensinal vectors to represent the players moves
-    player_board = std::vector< std::vector<bool> > (15, std::vector<bool>(15));
-    ai_board = std::vector< std::vector<bool> > (15, std::vector<bool>(15));
+    m_player_board
+    = std::vector< std::vector<bool> > (15, std::vector<bool>(15));
+    m_ai_board = std::vector< std::vector<bool> > (15, std::vector<bool>(15));
 }
 
 
@@ -34,12 +35,12 @@ GomokuClient::~GomokuClient()
     delete mp_tcpsocket;
 }
 
-void GomokuClient::PrintBoard(std::vector< std::vector<bool> > a_player_board,
-                                std::vector< std::vector<bool> > a_ai_board)
+void GomokuClient::PrintBoard(std::vector< std::vector<bool> > a_m_player_board,
+                                std::vector< std::vector<bool> > a_m_ai_board)
 {
     //Prints the board to screen
     std::cout << "   00 01 02 03 04 05 06 07 08 09 10 11 12 13 14" << std::endl;
-    for(unsigned int i=0; i < a_player_board.size(); i++)
+    for(unsigned int i=0; i < a_m_player_board.size(); i++)
     {
         if(i < 10)
         {
@@ -50,13 +51,13 @@ void GomokuClient::PrintBoard(std::vector< std::vector<bool> > a_player_board,
             std::cout << i;
         }
 
-        for(unsigned int j=0; j < a_player_board.size(); j++)
+        for(unsigned int j=0; j < a_m_player_board.size(); j++)
         {
-            if(a_player_board[i][j])
+            if(a_m_player_board[i][j])
             {
                 std::cout << "  " << "X";
             }
-            else if(a_ai_board[i][j])
+            else if(a_m_ai_board[i][j])
             {
                 std::cout << "  " << "O";
             }
@@ -67,7 +68,6 @@ void GomokuClient::PrintBoard(std::vector< std::vector<bool> > a_player_board,
         }
         std::cout << std::endl;
     }
-
 }
 
 void GomokuClient::getMove(char *a_message, int &x, int &y)
@@ -105,8 +105,8 @@ void GomokuClient::Run()
     {
         for(unsigned int j=0; j < 15; j++)
         {
-            player_board[i][j] = false;
-            ai_board[i][j] = false;
+            m_player_board[i][j] = false;
+            m_ai_board[i][j] = false;
         }
     }
 
@@ -119,6 +119,8 @@ void GomokuClient::Run()
     //Inform the user of the move command
     std::cout << "The command for moves are '00,00' "
         "representing the tile numbers on the board" << std::endl;
+    std::cout << "----------------------------------"
+        "-------------------------------------------------" << std::endl;
 
     //Tells the user the result of the coin flip,
     // and appeals to their sense of honor
@@ -135,14 +137,16 @@ void GomokuClient::Run()
         std::cout << "But that wouldn't be too honorable, would it?"
                                                                 << std::endl;
     }
-    
-    //Shows the imput prompt
+
+    //Print imput prompt
     std::cout << "<- ";
 
     while(1 < 2)
     {
         //Gets input
         std::cin >> send_message;
+
+        std::lock_guard<std::mutex> lock_guard (m_cout_mutex);
 
         //Creates a char arrays for the messages
         char char_send_message[send_message.size() + 1];
@@ -187,10 +191,10 @@ void GomokuClient::Run()
                 char_send_message, sizeof(char_send_message));
         }
 
-        //Breaks loop if quiting
+        //breaks loop if quiting
         if(send_message == "QUI")
         {
-            break;
+            std::exit(0);
         }
 
         //Checks if a move was made by the user, if so, print board
@@ -203,26 +207,26 @@ void GomokuClient::Run()
             //Gets the coordiniates
             getMove(move_message, x, y);
 
-            //Adds the move to player_board
-            player_board[x][y] = true;
+            //Adds the move to m_player_board
+            m_player_board[x][y] = true;
 
             //Prints the board with PrintBoard()
-            PrintBoard(player_board, ai_board);
-
-            //Shows the imput prompt
-            std::cout << "<- ";
-
+            PrintBoard(m_player_board, m_ai_board);
         }
+        m_cout_mutex.unlock();
     }
 
     try
     {
-    	// Get the native thread handle!
-    	std::thread::native_handle_type threadHandle = listenThread.native_handle();
-    	// Call the underlying function
+    	//Get the native thread handle
+    	std::thread::native_handle_type threadHandle
+            = listenThread.native_handle();
+
+    	// Call the native cancel with the handle
     	pthread_cancel(threadHandle);
 
-    	listenThread.join();  // Wait cfor the thread to finish
+        //Wait for the thread to finish
+    	listenThread.join();
 	}
 	catch(std::exception &e){
 		std::cout << e.what() << std::endl;
@@ -236,7 +240,6 @@ void GomokuClient::ListenToServer()
 
     while(1 < 2)
     {
-
         //Attempts to read a message from a file descriptor
         int bytes_read = read(mp_tcpsocket->get_descriptor(),
                 return_message, sizeof(return_message));
@@ -244,56 +247,80 @@ void GomokuClient::ListenToServer()
         //If something was read
         if(bytes_read != 0 && bytes_read != -1)
         {
+            std::lock_guard<std::mutex> lock_guard (m_cout_mutex);
+
             //Acts depending on server response message
             if(return_message[0] == 'I' && return_message[1] == 'L' &&
                     return_message[2] == 'C')
             {
+                //Mark where the message ends
+                return_message[4] = '\0';
+
                 //Print return_message
                 std::cout << "-> " << return_message;
 
-                break;
+                std::exit(1);
             }
             else if(return_message[0] == 'W' && return_message[1] == 'I' &&
                     return_message[2] == 'N')
             {
+                //Mark where the message ends
+                return_message[4] = '\0';
+
                 //Print return_message
                 std::cout << "-> " << return_message;
 
-                break;
+                std::exit(0);
             }
             else if(return_message[0] == 'I' && return_message[1] == 'L' &&
                     return_message[2] == 'M')
             {
+                //Mark where the message ends
+                return_message[10] = '\0';
+
                 //Print return_message
                 std::cout << "-> " << return_message;
 
-                break;
+                std::exit(1);
             }
             else if(return_message[0] == 'N' && return_message[1] == 'A' &&
                     return_message[2] == 'P')
             {
+                //Mark where the message ends
+                return_message[4] = '\0';
+
                 //Print return_message
                 std::cout << "-> " << return_message;
 
-                break;
+                std::exit(1);
             }
+            //Checks if return_message is CHT
+            else if(return_message[0] == 'C' && return_message[1] == 'H' &&
+                    return_message[2] == 'T')
+            {
+                //Print return_message
+                std::cout << std::endl;
+                std::cout << "-> " << return_message;
 
-
-
+                //Print imput prompt
+                std::cout << "<- ";
+                std::cout.flush();
+            }
             //Checks if return_message is OKR
-            if(return_message[0] == 'O' && return_message[1] == 'K' &&
+            else if(return_message[0] == 'O' && return_message[1] == 'K' &&
                     return_message[2] == 'R')
             {
                 //Print return_message
                 std::cout << "-> " << return_message;
 
                 //Prints empty board
-                PrintBoard(player_board, ai_board);
+                PrintBoard(m_player_board, m_ai_board);
+
+                //Print imput prompt
                 std::cout << "<- ";
             }
-
             //Checks if a move was made by the AI, if so, print board
-            if(return_message[0] == 'M' && return_message[1] == 'O' &&
+            else if(return_message[0] == 'M' && return_message[1] == 'O' &&
                 return_message[2] == 'V' && return_message[3] == ':' )
             {
                 //Variables to hold the move coordinates
@@ -302,26 +329,26 @@ void GomokuClient::ListenToServer()
                 //Gets the coordiniates
                 getMove(return_message, x, y);
 
-                //Adds the move to ai_board
-                ai_board[x][y] = true;
+                //Adds the move to m_ai_board
+                m_ai_board[x][y] = true;
+
+                //Mark where the message ends
+                return_message[10] = '\0';
 
                 //Print return_message
                 std::cout << "-> " << return_message;
 
                 //Prints the board with PrintBoard()
-                PrintBoard(player_board, ai_board);
+                PrintBoard(m_player_board, m_ai_board);
+
+                //Print imput prompt
+                std::cout << "<- ";
+                std::cout.flush();
 
             }
 
-            //Check if AI Won, if so, end the game
-            if(return_message[0] == 'W' && return_message[1] == 'I' &&
-                return_message[2] == 'N' )
-            {
-                //Print return_message
-                std::cout << "-> " << return_message;
-
-                break;
-            }
+            m_cout_mutex.unlock();
         }
     }
+    m_quit = true;
 }

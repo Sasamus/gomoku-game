@@ -25,11 +25,14 @@ private:
     TCPSocket *mp_tcpsocket;
 
     //Creates 2 dimensinal vectors to represent the players moves
-    std::vector< std::vector<bool> > player_board;
-    std::vector< std::vector<bool> > ai_board;
+    std::vector< std::vector<bool> > m_player_board;
+    std::vector< std::vector<bool> > m_ai_board;
 
     //Used to make sure cout usage is atomic
-    std::mutex cout_mutex;
+    std::mutex m_cout_mutex;
+
+    //Variable to keep track of if program shoudl quit
+    bool m_quit = false;
 
 public:
 
@@ -45,8 +48,8 @@ public:
     //Pre:
     //Post: Runs a game of gomoku
 
-    void PrintBoard(std::vector< std::vector<bool> > a_player_board,
-                    std::vector< std::vector<bool> > a_ai_board);
+    void PrintBoard(std::vector< std::vector<bool> > a_m_player_board,
+                    std::vector< std::vector<bool> > a_m_ai_board);
     //Pre:
     //Post: Prints the board to screen
 
